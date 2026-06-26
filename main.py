@@ -1,38 +1,78 @@
 from fastapi import FastAPI
 from datetime import datetime
-import ValueTest3  # din logikmodul
+from sqlalchemy import create_engine, Column, Integer, String, DateTime
+from sqlalchemy.orm import sessionmaker, declarative_base
+import os
+import ValueTest1  # din logikmodul
 
 app = FastAPI()
 
-LOG_FILE = "requests.log"
+# -----------------------------
+# DATABASE SETUP
+# -----------------------------
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-def log_value(value: int):
-    """Loggar varje inkommande värde till en fil."""
-    with open(LOG_FILE, "a") as f:
-        f.write(f"{datetime.now().isoformat()} - {value}\n")
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
 
+class LogEntry(Base):
+    __tablename__ = "log_entries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    value = Column(Integer, nullable=False)
+    result = Column(String, nullable=False)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+Base.metadata.create_all(bind=engine)
+
+# -----------------------------
+# HELPERS
+# -----------------------------
+def save_log(value: int, result: str):
+    db = SessionLocal()
+    entry = LogEntry(value=value, result=result)
+    db.add(entry)
+    db.commit()
+    db.refresh(entry)
+    db.close()
+    return entry
+
+# -----------------------------
+# ENDPOINTS
+# -----------------------------
 @app.get("/")
 def root():
-    """En enkel startsida så att / inte ger 404."""
-    return {"message": "API is running", "endpoints": ["/evaluate/{value}", "/logs"]}
+    return {
+        "message": "API with PostgreSQL is running",
+        "endpoints": ["/evaluate/{value}", "/logs"]
+    }
 
 @app.get("/evaluate/{value}")
 def evaluate(value: int):
-    """Tar emot ett värde, loggar det och kör din logik."""
-    log_value(value)
-    result = ValueTest3.evaluate_value(value)
+    result = ValueTest1.evaluate_value(value)
+    entry = save_log(value, result)
     return {
         "value": value,
         "result": result,
-        "logged": True
+        "timestamp": entry.timestamp.isoformat()
     }
 
 @app.get("/logs")
 def get_logs():
-    """Returnerar alla loggade värden."""
-    try:
-        with open(LOG_FILE, "r") as f:
-            lines = f.readlines()
-        return {"count": len(lines), "logs": lines}
-    except FileNotFoundError:
-        return {"count": 0, "logs": []}
+    db = SessionLocal()
+    entries = db.query(LogEntry).order_by(LogEntry.id.desc()).all()
+    db.close()
+
+    return {
+        "count": len(entries),
+        "logs": [
+            {
+                "id": e.id,
+                "value": e.value,
+                "result": e.result,
+                "timestamp": e.timestamp.isoformat()
+            }
+            for e in entries
+        ]
+    }

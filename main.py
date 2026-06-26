@@ -8,17 +8,12 @@ import ValueTest1  # din logikmodul
 app = FastAPI()
 
 # -----------------------------
-# DATABASE SETUP
+# DATABASE SETUP (DELAYED INIT)
 # -----------------------------
-
-def get_engine():
-    url = os.getenv("DATABASE_URL")
-    print("DEBUG_DATABASE_URL:", url)
-    return create_engine(url)
-
-engine = get_engine()
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+engine = None
+SessionLocal = sessionmaker(autocommit=False, autoflush=False)
 Base = declarative_base()
+
 
 class LogEntry(Base):
     __tablename__ = "log_entries"
@@ -28,7 +23,25 @@ class LogEntry(Base):
     result = Column(String, nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow)
 
-Base.metadata.create_all(bind=engine)
+
+def get_engine():
+    url = os.getenv("DATABASE_URL")
+    print("DEBUG_DATABASE_URL:", url)
+
+    if not url:
+        raise RuntimeError("DATABASE_URL is missing or empty!")
+
+    return create_engine(url)
+
+
+@app.on_event("startup")
+def startup_event():
+    global engine
+    engine = get_engine()
+    SessionLocal.configure(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    print("Database initialized successfully.")
+
 
 # -----------------------------
 # HELPERS
@@ -42,6 +55,7 @@ def save_log(value: int, result: str):
     db.close()
     return entry
 
+
 # -----------------------------
 # ENDPOINTS
 # -----------------------------
@@ -52,6 +66,7 @@ def root():
         "endpoints": ["/evaluate/{value}", "/logs"]
     }
 
+
 @app.get("/evaluate/{value}")
 def evaluate(value: int):
     result = ValueTest1.evaluate_value(value)
@@ -61,6 +76,7 @@ def evaluate(value: int):
         "result": result,
         "timestamp": entry.timestamp.isoformat()
     }
+
 
 @app.get("/logs")
 def get_logs():

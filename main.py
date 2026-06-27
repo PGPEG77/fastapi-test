@@ -84,7 +84,7 @@ def save_sweet(value: int, result: str):
 def root():
     return {
         "message": "API with PostgreSQL is running",
-        "endpoints": ["/evaluate/{value}", "/logs", "/logs/view", "/form", "/rebecka", "/rebecka/view"]
+        "endpoints": ["/evaluate/{value}", "/logs", "/logs/view", "/form", "/rebecka", "/rebecka/view", "/rebecka/reset", "/rebecka/debug"]
     }
 
 
@@ -264,6 +264,9 @@ def rebecka_view():
     </body>
     </html>
     """
+    return html  # ← denna saknades!
+
+
 @app.get("/rebecka/reset", response_class=HTMLResponse)
 def rebecka_reset():
     db = SessionLocal()
@@ -280,3 +283,11 @@ def rebecka_reset():
     </body></html>
     """
     return html
+
+
+@app.get("/rebecka/debug")
+def rebecka_debug():
+    db = SessionLocal()
+    entries = db.query(SweetEntry).all()
+    db.close()
+    return {"count": len(entries), "entries": [{"id": e.id, "value": e.value, "result": e.result} for e in entries]}

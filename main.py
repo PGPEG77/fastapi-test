@@ -7,6 +7,7 @@ import os
 import ValueTest1
 import SweetTest1
 import LouieTest1
+import StockTest1
 
 app = FastAPI()
 
@@ -654,5 +655,86 @@ def louie_reset():
         </div>
     </div>
     </body></html>
+    """
+    return html
+@app.get("/stocks", response_class=HTMLResponse)
+def stocks_view():
+    data = StockTest1.get_performance()
+
+    if not data:
+        return HTMLResponse("<h2>Kunde inte hämta aktiedata just nu, försök igen.</h2>")
+
+    # Bygg tabellrader
+    rows = ""
+    for i, s in enumerate(data):
+        medal = ["🥇", "🥈", "🥉"][i] if i < 3 else f"{i+1}."
+        day_color = "#16a34a" if s["day_pct"] >= 0 else "#dc2626"
+        week_color = "#16a34a" if s["week_pct"] >= 0 else "#dc2626"
+        month_color = "#16a34a" if s["month_pct"] >= 0 else "#dc2626"
+        rows += f"""
+        <tr>
+            <td>{medal} {s['name']}</td>
+            <td style="color:{day_color};font-weight:600">{'+' if s['day_pct'] >= 0 else ''}{s['day_pct']}%</td>
+            <td style="color:{week_color};font-weight:600">{'+' if s['week_pct'] >= 0 else ''}{s['week_pct']}%</td>
+            <td style="color:{month_color};font-weight:600">{'+' if s['month_pct'] >= 0 else ''}{s['month_pct']}%</td>
+            <td style="color:#6b7280">{s['price']} kr</td>
+        </tr>"""
+
+    # Diagram – månadens vinnare
+    labels = [s["name"] for s in data]
+    values = [s["month_pct"] for s in data]
+    colors = ["#16a34a" if v >= 0 else "#dc2626" for v in values]
+
+    html = f"""
+    <html>
+    <head>
+        <title>Stockholmsbörsen – Topplista</title>
+        {STYLE}
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    </head>
+    <body>
+    <div class="card" style="max-width:700px">
+        <h2>📈 Stockholmsbörsen</h2>
+        <p class="subtitle">Large Cap – rankad efter månadens utveckling</p>
+
+        <table>
+            <tr>
+                <th>Bolag</th>
+                <th>1 dag</th>
+                <th>1 vecka</th>
+                <th>1 månad</th>
+                <th>Pris</th>
+            </tr>
+            {rows}
+        </table>
+
+        <h3 style="margin: 32px 0 16px; color:#1a1a2e">Månadens utveckling (%)</h3>
+        <canvas id="chart" height="200"></canvas>
+        <script>
+            const ctx = document.getElementById('chart').getContext('2d');
+            new Chart(ctx, {{
+                type: 'bar',
+                data: {{
+                    labels: {labels},
+                    datasets: [{{
+                        data: {values},
+                        backgroundColor: {colors},
+                        borderRadius: 6,
+                    }}]
+                }},
+                options: {{
+                    indexAxis: 'y',
+                    plugins: {{ legend: {{ display: false }} }},
+                    scales: {{ x: {{ grid: {{ color: '#f3f4f6' }} }} }}
+                }}
+            }});
+        </script>
+
+        <p style="color:#9ca3af;font-size:0.8rem;margin-top:24px;text-align:center">
+            Data från Yahoo Finance · Uppdateras vid varje sidladdning
+        </p>
+    </div>
+    </body>
+    </html>
     """
     return html

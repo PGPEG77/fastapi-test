@@ -502,7 +502,7 @@ def louie_form():
     <div class="card">
         <h2>Hur söt är Louie? 🐶</h2>
         <p class="subtitle">Välj ett betyg från 1 till 5 och skicka in din röst</p>
-        <img src="https://i.imgur.com/qjcvhJY.jpeg" alt="Louie" class="pet-img">
+        <img src="https://i.postimg.cc/21YZNYM8/image.jpg" alt="Louie" class="pet-img">
         <form method="post" action="/louie/submit">
             <input type="hidden" name="value" id="hiddenValue">
             <div class="btn-group">
@@ -548,7 +548,7 @@ def louie_submit(value: int = Form(...)):
     <div class="card">
         <h2>Tack för din röst!</h2>
         <p class="subtitle">Din röst har sparats</p>
-        <img src="https://i.imgur.com/qjcvhJY.jpeg" alt="Louie" class="pet-img">
+        <img src="https://i.postimg.cc/21YZNYM8/image.jpg" alt="Louie" class="pet-img">
         <div class="result-value">{stars}</div>
         <div class="result-text">{result}</div>
         <div class="links">
@@ -589,7 +589,7 @@ def louie_view():
     <div class="card">
         <h2>Hur söt är Louie? 🐶</h2>
         <p class="subtitle">Sammanställning av alla röster</p>
-        <img src="https://i.imgur.com/qjcvhJY.jpeg" alt="Louie" class="pet-img">
+        <img src="https://i.postimg.cc/21YZNYM8/image.jpg" alt="Louie" class="pet-img">
         <div class="stats">
             <div class="stat">
                 <div class="stat-value">{total}</div>

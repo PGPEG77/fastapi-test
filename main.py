@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
 from datetime import datetime
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.orm import sessionmaker, declarative_base
@@ -63,7 +64,7 @@ def save_log(value: int, result: str):
 def root():
     return {
         "message": "API with PostgreSQL is running",
-        "endpoints": ["/evaluate/{value}", "/logs"]
+        "endpoints": ["/evaluate/{value}", "/logs", "/logs/view"]
     }
 
 
@@ -96,3 +97,27 @@ def get_logs():
             for e in entries
         ]
     }
+
+
+@app.get("/logs/view", response_class=HTMLResponse)
+def view_logs():
+    db = SessionLocal()
+    entries = db.query(LogEntry).order_by(LogEntry.id.desc()).all()
+    db.close()
+
+    rows = "".join(
+        f"<tr><td>{e.id}</td><td>{e.value}</td><td>{e.result}</td><td>{e.timestamp.isoformat()}</td></tr>"
+        for e in entries
+    )
+
+    html = f"""
+    <html><head><title>Loggar</title></head>
+    <body>
+    <h2>Loggade värden</h2>
+    <table border="1" cellpadding="8">
+        <tr><th>ID</th><th>Värde</th><th>Resultat</th><th>Tid</th></tr>
+        {rows}
+    </table>
+    </body></html>
+    """
+    return html

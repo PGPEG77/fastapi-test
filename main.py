@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+Här är hela main.py med formuläret tillagt:
+pythonfrom fastapi import FastAPI, Form
 from fastapi.responses import HTMLResponse
 from datetime import datetime
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
@@ -64,7 +65,7 @@ def save_log(value: int, result: str):
 def root():
     return {
         "message": "API with PostgreSQL is running",
-        "endpoints": ["/evaluate/{value}", "/logs", "/logs/view"]
+        "endpoints": ["/evaluate/{value}", "/logs", "/logs/view", "/form"]
     }
 
 
@@ -121,3 +122,45 @@ def view_logs():
     </body></html>
     """
     return html
+
+
+@app.get("/form", response_class=HTMLResponse)
+def show_form():
+    html = """
+    <html><head><title>Testa ett värde</title></head>
+    <body>
+    <h2>Slå in ett värde</h2>
+    <form method="post" action="/form/submit">
+        <input type="number" name="value" placeholder="Skriv ett heltal" required>
+        <button type="submit">Skicka</button>
+    </form>
+    </body></html>
+    """
+    return html
+
+
+@app.post("/form/submit", response_class=HTMLResponse)
+def submit_form(value: int = Form(...)):
+    result = ValueTest1.evaluate_value(value)
+    save_log(value, result)
+
+    html = f"""
+    <html><head><title>Resultat</title></head>
+    <body>
+    <h2>Resultat</h2>
+    <p><strong>Värde:</strong> {value}</p>
+    <p><strong>Utfall:</strong> {result}</p>
+    <br>
+    <a href="/form">⬅ Testa ett nytt värde</a> &nbsp;|&nbsp;
+    <a href="/logs/view">📋 Visa alla loggar</a>
+    </body></html>
+    """
+    return html
+De enda ändringarna från förra versionen:
+
+Rad 1 – Form importeras tillsammans med FastAPI
+/form nämns i root-endpointet
+Två nya endpoints sist – GET /form visar formuläret, POST /form/submit hanterar svaret
+
+Kör git add . → git commit → git push och testa på:
+https://din-app.onrender.com/form

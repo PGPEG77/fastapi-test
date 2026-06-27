@@ -264,4 +264,19 @@ def rebecka_view():
     </body>
     </html>
     """
+@app.get("/rebecka/reset", response_class=HTMLResponse)
+def rebecka_reset():
+    db = SessionLocal()
+    db.query(SweetEntry).delete()
+    db.commit()
+    db.close()
+
+    html = """
+    <html><head><title>Nollställd</title></head>
+    <body>
+    <h2>✅ Omröstningen är nollställd!</h2>
+    <a href="/rebecka">⬅ Starta om omröstningen</a> &nbsp;|&nbsp;
+    <a href="/rebecka/view">📊 Visa resultat</a>
+    </body></html>
+    """
     return html

@@ -1,4 +1,3 @@
-from fastapi import FastAPI, Form
 from fastapi.responses import HTMLResponse
 from datetime import datetime
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
@@ -6,6 +5,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 import os
 import ValueTest1
 import SweetTest1
+import LouieTest1
 
 app = FastAPI()
 
@@ -28,6 +28,15 @@ class LogEntry(Base):
 
 class SweetEntry(Base):
     __tablename__ = "sweet_entries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    value = Column(Integer, nullable=False)
+    result = Column(String, nullable=False)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+
+class LouieEntry(Base):
+    __tablename__ = "louie_entries"
 
     id = Column(Integer, primary_key=True, index=True)
     value = Column(Integer, nullable=False)
@@ -77,6 +86,16 @@ def save_sweet(value: int, result: str):
     return entry
 
 
+def save_louie(value: int, result: str):
+    db = SessionLocal()
+    entry = LouieEntry(value=value, result=result)
+    db.add(entry)
+    db.commit()
+    db.refresh(entry)
+    db.close()
+    return entry
+
+
 # -----------------------------
 # SHARED CSS
 # -----------------------------
@@ -109,6 +128,13 @@ STYLE = """
             color: #6b7280;
             font-size: 0.95rem;
             margin-bottom: 28px;
+        }
+        .pet-img {
+            width: 100%;
+            max-height: 280px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 24px;
         }
         .btn-group {
             display: flex;
@@ -200,7 +226,7 @@ STYLE = """
 def root():
     return {
         "message": "API with PostgreSQL is running",
-        "endpoints": ["/evaluate/{value}", "/logs", "/logs/view", "/form", "/rebecka", "/rebecka/view", "/rebecka/reset", "/rebecka/debug"]
+        "endpoints": ["/evaluate/{value}", "/logs", "/logs/view", "/form", "/rebecka", "/rebecka/view", "/rebecka/reset", "/louie", "/louie/view", "/louie/reset"]
     }
 
 
@@ -466,9 +492,166 @@ def rebecka_reset():
     return html
 
 
-@app.get("/rebecka/debug")
-def rebecka_debug():
+@app.get("/louie", response_class=HTMLResponse)
+def louie_form():
+    html = f"""
+    <html>
+    <head><title>Hur söt är Louie?</title>{STYLE}</head>
+    <body>
+    <div class="card">
+        <h2>Hur söt är Louie? 🐶</h2>
+        <p class="subtitle">Välj ett betyg från 1 till 5 och skicka in din röst</p>
+        <img src="https://i.imgur.com/qjcvhJY.jpeg" alt="Louie" class="pet-img">
+        <form method="post" action="/louie/submit">
+            <input type="hidden" name="value" id="hiddenValue">
+            <div class="btn-group">
+                <button type="button" class="btn" onclick="select(1)">😐<br><small>1</small></button>
+                <button type="button" class="btn" onclick="select(2)">🙂<br><small>2</small></button>
+                <button type="button" class="btn" onclick="select(3)">😊<br><small>3</small></button>
+                <button type="button" class="btn" onclick="select(4)">😍<br><small>4</small></button>
+                <button type="button" class="btn" onclick="select(5)">🥰<br><small>5</small></button>
+            </div>
+            <button type="submit" class="submit-btn" id="submitBtn" disabled>Välj ett betyg</button>
+        </form>
+        <div class="links" style="margin-top:24px">
+            <a href="/louie/view" class="link">📊 Visa resultat</a>
+        </div>
+    </div>
+    <script>
+        function select(val) {{
+            document.getElementById('hiddenValue').value = val;
+            document.querySelectorAll('.btn').forEach((b, i) => {{
+                b.classList.toggle('selected', i + 1 === val);
+            }});
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = false;
+            btn.textContent = 'Skicka röst';
+        }}
+    </script>
+    </body>
+    </html>
+    """
+    return html
+
+
+@app.post("/louie/submit", response_class=HTMLResponse)
+def louie_submit(value: int = Form(...)):
+    result = LouieTest1.evaluate_value(value)
+    save_louie(value, result)
+
+    stars = "⭐" * value
+
+    html = f"""
+    <html><head><title>Tack för din röst!</title>{STYLE}</head>
+    <body>
+    <div class="card">
+        <h2>Tack för din röst!</h2>
+        <p class="subtitle">Din röst har sparats</p>
+        <img src="https://i.imgur.com/qjcvhJY.jpeg" alt="Louie" class="pet-img">
+        <div class="result-value">{stars}</div>
+        <div class="result-text">{result}</div>
+        <div class="links">
+            <a href="/louie" class="link">⬅ Rösta igen</a>
+            <a href="/louie/view" class="link">📊 Visa resultat</a>
+        </div>
+    </div>
+    </body></html>
+    """
+    return html
+
+
+@app.get("/louie/view", response_class=HTMLResponse)
+def louie_view():
     db = SessionLocal()
-    entries = db.query(SweetEntry).all()
+    entries = db.query(LouieEntry).all()
     db.close()
-    return {"count": len(entries), "entries": [{"id": e.id, "value": e.value, "result": e.result} for e in entries]}
+
+    counts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+    for e in entries:
+        if e.value in counts:
+            counts[e.value] += 1
+
+    total = len(entries)
+    average = round(sum(e.value for e in entries) / total, 2) if total > 0 else 0
+
+    labels = ["1 😐", "2 🙂", "3 😊", "4 😍", "5 🥰"]
+    values = [counts[i] for i in range(1, 6)]
+
+    html = f"""
+    <html>
+    <head>
+        <title>Hur söt är Louie?</title>
+        {STYLE}
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    </head>
+    <body>
+    <div class="card">
+        <h2>Hur söt är Louie? 🐶</h2>
+        <p class="subtitle">Sammanställning av alla röster</p>
+        <img src="https://i.imgur.com/qjcvhJY.jpeg" alt="Louie" class="pet-img">
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value">{total}</div>
+                <div class="stat-label">Antal röster</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">{average}</div>
+                <div class="stat-label">Snittbetyg</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">/ 5</div>
+                <div class="stat-label">Max betyg</div>
+            </div>
+        </div>
+        <canvas id="chart" height="200"></canvas>
+        <script>
+            const ctx = document.getElementById('chart').getContext('2d');
+            new Chart(ctx, {{
+                type: 'bar',
+                data: {{
+                    labels: {labels},
+                    datasets: [{{
+                        label: 'Antal röster',
+                        data: {values},
+                        backgroundColor: ['#f87171','#fb923c','#facc15','#4ade80','#f472b6'],
+                        borderRadius: 6,
+                    }}]
+                }},
+                options: {{
+                    scales: {{ y: {{ beginAtZero: true, ticks: {{ stepSize: 1 }} }} }},
+                    plugins: {{ legend: {{ display: false }} }}
+                }}
+            }});
+        </script>
+        <div class="links" style="margin-top:28px">
+            <a href="/louie" class="link">⬅ Rösta</a>
+        </div>
+        <a href="/louie/reset" class="reset-link">Nollställ omröstningen</a>
+    </div>
+    </body>
+    </html>
+    """
+    return html
+
+
+@app.get("/louie/reset", response_class=HTMLResponse)
+def louie_reset():
+    db = SessionLocal()
+    db.query(LouieEntry).delete()
+    db.commit()
+    db.close()
+
+    html = f"""
+    <html><head><title>Nollställd</title>{STYLE}</head>
+    <body>
+    <div class="card" style="text-align:center">
+        <h2>✅ Louies omröstning är nollställd!</h2>
+        <p class="subtitle" style="margin-bottom:28px">All data har raderats från databasen</p>
+        <div class="links">
+            <a href="/louie" class="link">⬅ Starta om</a>
+            <a href="/louie/view" class="link">📊 Visa resultat</a>
+        </div>
+    </div>
+    </body></html>
+    """
+    return html

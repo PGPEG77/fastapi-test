@@ -1,4 +1,3 @@
-Här är hela main.py med formuläret tillagt:
 pythonfrom fastapi import FastAPI, Form
 from fastapi.responses import HTMLResponse
 from datetime import datetime

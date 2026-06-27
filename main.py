@@ -156,11 +156,3 @@ def submit_form(value: int = Form(...)):
     </body></html>
     """
     return html
-De enda ändringarna från förra versionen:
-
-Rad 1 – Form importeras tillsammans med FastAPI
-/form nämns i root-endpointet
-Två nya endpoints sist – GET /form visar formuläret, POST /form/submit hanterar svaret
-
-Kör git add . → git commit → git push och testa på:
-https://din-app.onrender.com/form

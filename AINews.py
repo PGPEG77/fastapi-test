@@ -7,7 +7,7 @@ NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 def get_ai_news():
     url = "https://newsapi.org/v2/everything"
     params = {
-        "q": "artificial intelligence",
+"q": "\"artificial intelligence\" OR \"machine learning\" OR \"large language model\"",
         "sortBy": "publishedAt",
         "language": "en",
         "pageSize": 10,

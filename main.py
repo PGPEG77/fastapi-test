@@ -8,7 +8,7 @@ import ValueTest1
 import SweetTest1
 import LouieTest1
 import StockTest1
-import NewsTest1
+import AINews
 import BatteryNews
 import WindNews
 import StorageNews
@@ -745,7 +745,7 @@ def stocks_view():
 
 @app.get("/ainews", response_class=HTMLResponse)
 def ainews_view():
-    articles = NewsTest1.get_ai_news()
+    articles = AINews.get_ai_news()
 
     if not articles:
         return HTMLResponse("<h2>Kunde inte hämta nyheter just nu, försök igen.</h2>")

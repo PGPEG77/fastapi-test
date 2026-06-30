@@ -7,7 +7,7 @@ NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 def get_news():
     url = "https://newsapi.org/v2/everything"
     params = {
-        "q": "wind power",
+        "q": "\"wind power\" OR \"wind energy\" OR \"wind turbine\"",
         "sortBy": "publishedAt",
         "language": "en",
         "pageSize": 10,

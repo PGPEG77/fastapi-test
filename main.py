@@ -8,6 +8,7 @@ import ValueTest1
 import SweetTest1
 import LouieTest1
 import StockTest1
+import NewsTest1
 
 app = FastAPI()
 
@@ -733,6 +734,38 @@ def stocks_view():
         <p style="color:#9ca3af;font-size:0.8rem;margin-top:24px;text-align:center">
             Data från Yahoo Finance · Uppdateras vid varje sidladdning
         </p>
+    </div>
+    </body>
+    </html>
+    """
+    return html
+
+@app.get("/ainews", response_class=HTMLResponse)
+def ainews_view():
+    articles = NewsTest1.get_ai_news()
+
+    if not articles:
+        return HTMLResponse("<h2>Kunde inte hämta nyheter just nu, försök igen.</h2>")
+
+    cards = ""
+    for a in articles:
+        cards += f"""
+        <div style="border-bottom:1px solid #f3f4f6; padding:20px 0;">
+            <a href="{a['url']}" target="_blank" style="font-size:1.1rem; font-weight:600; color:#1a1a2e; text-decoration:none;">
+                {a['title']}
+            </a>
+            <p style="color:#9ca3af; font-size:0.85rem; margin:6px 0 10px;">{a['source']} · {a['published']}</p>
+            <p style="color:#374151; font-size:0.95rem;">{a['description']}</p>
+        </div>"""
+
+    html = f"""
+    <html>
+    <head><title>AI-nyheter</title>{STYLE}</head>
+    <body>
+    <div class="card" style="max-width:700px">
+        <h2>📰 Senaste AI-nyheterna</h2>
+        <p class="subtitle">Topp 10 färska artiklar om AI</p>
+        {cards}
     </div>
     </body>
     </html>

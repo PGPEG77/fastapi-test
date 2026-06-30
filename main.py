@@ -9,6 +9,9 @@ import SweetTest1
 import LouieTest1
 import StockTest1
 import NewsTest1
+import BatteryNews
+import WindNews
+import StorageNews
 
 app = FastAPI()
 
@@ -765,6 +768,104 @@ def ainews_view():
     <div class="card" style="max-width:700px">
         <h2>📰 Senaste AI-nyheterna</h2>
         <p class="subtitle">Topp 10 färska artiklar om AI</p>
+        {cards}
+    </div>
+    </body>
+    </html>
+    """
+    return html
+
+@app.get("/batterynews", response_class=HTMLResponse)
+def battery_news_view():
+    articles = BatteryNews.get_news()
+
+    if not articles:
+        return HTMLResponse("<h2>Kunde inte hämta nyheter just nu, försök igen.</h2>")
+
+    cards = ""
+    for a in articles:
+        cards += f"""
+        <div style="border-bottom:1px solid #f3f4f6; padding:20px 0;">
+            <a href="{a['url']}" target="_blank" style="font-size:1.1rem; font-weight:600; color:#1a1a2e; text-decoration:none;">
+                {a['title']}
+            </a>
+            <p style="color:#9ca3af; font-size:0.85rem; margin:6px 0 10px;">{a['source']} · {a['published']}</p>
+            <p style="color:#374151; font-size:0.95rem;">{a['description']}</p>
+        </div>"""
+
+    html = f"""
+    <html>
+    <head><title>Batterinyheter</title>{STYLE}</head>
+    <body>
+    <div class="card" style="max-width:700px">
+        <h2>🔋 Senaste batterinyheterna</h2>
+        <p class="subtitle">Topp 10 färska artiklar om batteriteknik</p>
+        {cards}
+    </div>
+    </body>
+    </html>
+    """
+    return html
+
+
+@app.get("/windnews", response_class=HTMLResponse)
+def wind_news_view():
+    articles = WindNews.get_news()
+
+    if not articles:
+        return HTMLResponse("<h2>Kunde inte hämta nyheter just nu, försök igen.</h2>")
+
+    cards = ""
+    for a in articles:
+        cards += f"""
+        <div style="border-bottom:1px solid #f3f4f6; padding:20px 0;">
+            <a href="{a['url']}" target="_blank" style="font-size:1.1rem; font-weight:600; color:#1a1a2e; text-decoration:none;">
+                {a['title']}
+            </a>
+            <p style="color:#9ca3af; font-size:0.85rem; margin:6px 0 10px;">{a['source']} · {a['published']}</p>
+            <p style="color:#374151; font-size:0.95rem;">{a['description']}</p>
+        </div>"""
+
+    html = f"""
+    <html>
+    <head><title>Vindkraftsnyheter</title>{STYLE}</head>
+    <body>
+    <div class="card" style="max-width:700px">
+        <h2>💨 Senaste vindkraftsnyheterna</h2>
+        <p class="subtitle">Topp 10 färska artiklar om vindkraft</p>
+        {cards}
+    </div>
+    </body>
+    </html>
+    """
+    return html
+
+
+@app.get("/storagenews", response_class=HTMLResponse)
+def storage_news_view():
+    articles = StorageNews.get_news()
+
+    if not articles:
+        return HTMLResponse("<h2>Kunde inte hämta nyheter just nu, försök igen.</h2>")
+
+    cards = ""
+    for a in articles:
+        cards += f"""
+        <div style="border-bottom:1px solid #f3f4f6; padding:20px 0;">
+            <a href="{a['url']}" target="_blank" style="font-size:1.1rem; font-weight:600; color:#1a1a2e; text-decoration:none;">
+                {a['title']}
+            </a>
+            <p style="color:#9ca3af; font-size:0.85rem; margin:6px 0 10px;">{a['source']} · {a['published']}</p>
+            <p style="color:#374151; font-size:0.95rem;">{a['description']}</p>
+        </div>"""
+
+    html = f"""
+    <html>
+    <head><title>Energilagringsnyheter</title>{STYLE}</head>
+    <body>
+    <div class="card" style="max-width:700px">
+        <h2>🔌 Senaste energilagringsnyheterna</h2>
+        <p class="subtitle">Topp 10 färska artiklar om energilagring</p>
         {cards}
     </div>
     </body>
